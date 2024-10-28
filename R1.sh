@@ -50,7 +50,11 @@ iptables -A FORWARD -s 192.168.1.0/24 -d 8.8.8.8 -p udp --dport 53 -j ACCEPT
 iptables -A FORWARD -s 192.168.1.0/24 -d 8.8.8.8 -p tcp --dport 53 -j ACCEPT
 
 # Permitir tráfico HTTP a S1
-iptables -A FORWARD -d 192.168.0.2 -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -d 192.168.0.2 -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -s 192.168.0.2 -p tcp --sport 80 -j ACCEPT
+iptables -A OUTPUT -d 192.168.0.2 -p tcp --dport 80 -j ACCEPT
+iptables -A OUTPUT -d 192.168.0.2 -p tcp --sport 80 -j ACCEPT
+iptables -A FORWARD -d 192.168.0.2 -p tcp --sport 80 -j ACCEPT
 
 # Permitir trafico TCP sobre el puerto 3000 (ntpong) desde hosts de la Intranet
 iptables -A INPUT -s 192.168.0.0/24 -p tcp --dport 3000 -j ACCEPT
