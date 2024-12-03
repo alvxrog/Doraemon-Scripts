@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      - frontend
+      - backend
+    deploy:
+      replicas: 2
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: harsh
+      WORDPRESS_DB_PASSWORD: redhat
+    volumes:
+      - wordpress_db:/var/www/html
+
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: harsh
+      MYSQL_PASSWORD: redhat
+      MYSQL_ROOT_PASSWORD: admin
+    volumes:
+      - mysql_db:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  wordpress_db:
+  mysql_db:

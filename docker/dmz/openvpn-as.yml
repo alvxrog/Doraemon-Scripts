@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  openvpn-as:
+    image: openvpn/openvpn-as
+    container_name: openvpn-as
+    restart: unless-stopped
+    ports:
+      - "943:943"
+      - "9443:9443"
+      - "1194:1194/udp"
+    volumes:
+      - openvpn_data:/config
+    environment:
+      - TZ=Europe/Madrid
+
+volumes:
+  openvpn_data:

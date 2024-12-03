@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  proftpd-server-alpine:
+    image: mekayelanik/proftpd-server-alpine:latest
+    container_name: proftpd-server-alpine
+    environment:
+      - TZ=Europe/Madrid
+      - FTP_PORT=21
+      - NUMBER_OF_SHARES=5
+      - FTP_SHARE_1=SHARE_1
+      - FTP_PASSWORD_1=PASS_1
+      - FTP_SHARE_1_PUID=1001
+      - FTP_SHARE_1_PGID=1001
+      - FTP_SHARE_2=SHARE_2
+      - FTP_PASSWORD_2=PASS_2
+      - FTP_SHARE_2_PUID=1002
+      - FTP_SHARE_2_PGID=1002
+      - FTP_SHARE_3=SHARE_3
+      - FTP_PASSWORD_3=PASS_3
+      - FTP_SHARE_3_PUID=1003
+      - FTP_SHARE_3_PGID=1003
+      - FTP_SHARE_4=SHARE_4
+      - FTP_PASSWORD_4=PASS_4
+      - FTP_SHARE_4_PUID=1004
+      - FTP_SHARE_4_PGID=1004
+      - FTP_SHARE_5=SHARE_5
+      - FTP_PASSWORD_5=PASS_5
+      - FTP_SHARE_5_PUID=1005
+      - FTP_SHARE_5_PGID=1005
+    volumes:
+      - ./shared:/data/SHARE_1
+      - ./proftpd.conf:/etc/proftpd/proftpd.conf:ro
+    ports:
+      - "21:21"
+      - "4559-4564:4559-4564" 
+    restart: unless-stopped
