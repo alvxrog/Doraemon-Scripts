@@ -2,11 +2,13 @@ systemctl stop NetworkManager.service
 systemctl stop firewalld.service
 # Asignamos las IPs de las interfaces del router de las dos subredes de Dorayaki
 # dorayakih
-ifconfig enp0s3 192.168.1.1 netmask 255.255.255.0 up
+ifconfig enp0s3 192.168.1.1 netmask 255.255.255.128 up
 # dorayakis
 ifconfig enp0s8 192.168.0.1 netmask 255.255.255.0 up
 # pppr1rc
 ifconfig enp0s9 192.168.33.253 netmask 255.255.255.252 up
+# dorayakih_s
+ifconfig enp0s10 192.168.1.129 netmask 255.255.255.128 up
 
 # Activar encaminamiento de paquetes
 # Se puede sustituir añadiendo la linea de configuración al fichero /etc/sysctl.conf
@@ -39,7 +41,7 @@ iptables -A FORWARD -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 
 # ------------- FILTRADO ------------- 
 # Permitir reenvio solicitudes ICMP N1-S1
-iptables -A FORWARD -p icmp -s 192.168.1.2 -d 192.168.0.2 -j ACCEPT
+iptables -A FORWARD -p icmp -s 192.168.1.130 -d 192.168.0.2 -j ACCEPT
 
 # Permitir solicitudes DNS de los servidores al servidor DNS de Google
 iptables -A FORWARD -s 192.168.0.0/24 -d 8.8.8.8 -p udp --dport 53 -j ACCEPT

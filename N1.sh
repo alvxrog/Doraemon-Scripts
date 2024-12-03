@@ -1,8 +1,8 @@
 # Configuración manual IP para N1
-ifconfig enp0s3 192.168.1.2 netmask 255.255.255.0 up
+ifconfig enp0s3 192.168.1.130 netmask 255.255.255.128 up
 
 # Añadimos a R1 como router por defecto
-route add default gw 192.168.1.1
+route add default gw 192.168.1.129
 
 # Vaciar reglas iptable
 iptables -F
@@ -25,4 +25,4 @@ iptables -A OUTPUT -p icmp -d 192.168.0.2 -j ACCEPT
 iptables -A INPUT -p icmp -s 192.168.0.2 -j ACCEPT
 
 # Permitir conexiones entrantes desde hosts de la intranet para servir sobre servidor Apache y HTTP
-iptables -A INPUT -s 192.168.1.0/24 -p tcp --dport 80 ACCEPT
+iptables -A INPUT -s 192.168.1.0/25 -p tcp --dport 80 ACCEPT

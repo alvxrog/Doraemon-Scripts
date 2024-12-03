@@ -1,9 +1,6 @@
 systemctl stop firewalld.service
 
-# Añadimos su ruta por defecto
-route add default gw 192.168.1.1
-
-# Vaciar reglas iptables
+# Vaciar reglas iptables existentes
 iptables -F
 
 # Política drop para conexiones salientes

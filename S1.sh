@@ -41,4 +41,6 @@ iptables -A OUTPUT -p tcp --sport 443 -j ACCEPT
 iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 
+# TODO: Reglas para docker-swarm
+
 resolvectl dns enp0s3 8.8.8.8
