@@ -1,0 +1,23 @@
+services:
+  nagios:
+    image: jasonrivers/nagios:latest
+    container_name: nagios4
+    ports:
+      - "8080:80"
+    volumes:
+      - nagios_etc:/opt/nagios/etc/
+      - nagios_var:/opt/nagios/var/
+      - nagios_plugins:/opt/Custom-Nagios-Plugins
+      - nagiosgraph_var:/opt/nagiosgraph/var/
+      - nagiosgraph_etc:/opt/nagiosgraph/etc/
+    restart: unless-stopped
+
+volumes:
+  nagios_etc:
+  nagios_var:
+  nagios_plugins:
+  nagiosgraph_var:
+  nagiosgraph_etc:
+
+# Debido a problemas con los permisos, dejamos que docker gestione los volumenes automaticamente y copiamos
+# las configuraciones necesarias al contenedor, que más tarde las persistirá a los volumenes
