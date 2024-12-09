@@ -31,13 +31,23 @@ iptables -t nat -A POSTROUTING -s 192.168.0.0/24 -o enp0s9 -j SNAT --to 192.168.
 iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o enp0s9 -j SNAT --to 192.168.33.253
 
 # REGLAS DE PORT FORWARDING
-# Servidor HTTP en la .0.2
-iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to 192.168.0.2
-
 # Permitir conexiones entrantes/salientes establecidas
 iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A FORWARD -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+
+# Servidor OpenVPN en la .0.10 (D2)
+# Forward TCP 443
+iptables -t NAT -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination 192.168.0.10:443
+iptables -A FORWARD -p tcp -d 192.168.0.10 --dport 443 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+
+# Forward UDP 1194
+iptables -t nat -A PREROUTING -p udp --dport 1194 -j DNAT --to-destination 192.168.0.10:1194
+iptables -A FORWARD -p udp -d 192.168.0.10 --dport 1194 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+
+# Forward TCP 943
+iptables -t nat -A PREROUTING -p tcp --dport 943 -j DNAT --to-destination 192.168.0.10:943
+iptables -A FORWARD -p tcp -d 192.168.0.10 --dport 943 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 
 # ------------- FILTRADO ------------- 
 # Permitir reenvio solicitudes ICMP N1-S1

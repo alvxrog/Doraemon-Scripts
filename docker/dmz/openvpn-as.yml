@@ -4,15 +4,15 @@ services:
   openvpn-as:
     image: openvpn/openvpn-as
     container_name: openvpn-as
-    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
     ports:
       - "943:943"
-      - "9443:9443"
+      - "443:443"
       - "1194:1194/udp"
     volumes:
-      - openvpn_data:/config
-    environment:
-      - TZ=Europe/Madrid
+      - openvpn_data:/openvpn
+    restart: unless-stopped
 
 volumes:
   openvpn_data:
