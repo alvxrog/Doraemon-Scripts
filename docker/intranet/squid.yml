@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+  squid:
+    image: ubuntu/squid
+    container_name: squid_container
+    environment:
+      - TZ=UTC
+    ports:
+      - "3128:3128"
+    volumes:
+      - squid_data:/var/log/squid
+    networks:
+      - squid_network
+    restart: unless-stopped
+
+  sarg:
+    build: ./sarg
+    container_name: sarg_container
+    ports:
+      - "8080:80"  # Puerto para acceder a los informes de SARG
+    volumes:
+      - squid_data:/var/log/squid  # Volumen compartido con Squid para los logs
+    depends_on:
+      - squid  # Aseguramos que Squid se inicie primero
+    networks:
+      - squid_network
+
+volumes:
+  squid_data:
+
+networks:
+  squid_network:
