@@ -1,5 +1,8 @@
 systemctl stop NetworkManager.service
 systemctl stop firewalld.service
+
+trap 'echo "Error en el comando: $BASH_COMMAND"' ERR
+
 # Asignamos las IPs de las interfaces del router de las dos subredes de Dorayaki
 # dorayakih
 ifconfig enp0s3 192.168.1.1 netmask 255.255.255.128 up
@@ -24,6 +27,7 @@ systemctl start dhcpd.service
 
 # Limpiar tablas iptables
 iptables -F
+iptables -t nat -F
 
 # --------- SNAT Y PORT FOWARDING --------- 
 # SNAT para las subredes de host y DMZ
@@ -34,43 +38,52 @@ iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -o enp0s9 -j SNAT --to 192.168.
 # Permitir conexiones entrantes/salientes establecidas
 iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-iptables -A FORWARD -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 
 # Servidor OpenVPN en la .0.10 (D2)
 # Forward TCP 443
-iptables -t NAT -A PREROUTING -p tcp --dport 443 -j DNAT --to-destination 192.168.0.10:443
-iptables -A FORWARD -p tcp -d 192.168.0.10 --dport 443 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+iptables -t nat -A PREROUTING -p tcp -i enp0s9 -d 192.168.33.253 --dport 443 -j DNAT --to-destination 192.168.0.10:443
+iptables -A FORWARD -p tcp -i enp0s9 -d 192.168.0.10 --dport 443 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 
 # Forward UDP 1194
-iptables -t nat -A PREROUTING -p udp --dport 1194 -j DNAT --to-destination 192.168.0.10:1194
-iptables -A FORWARD -p udp -d 192.168.0.10 --dport 1194 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+iptables -t nat -A PREROUTING -i enp0s9 -p udp -d 192.168.33.253 --dport 1194 -j DNAT --to-destination 192.168.0.10:1194
+iptables -A FORWARD -p udp -i enp0s9 -d 192.168.0.10 --dport 1194 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 
 # Forward TCP 943
-iptables -t nat -A PREROUTING -p tcp --dport 943 -j DNAT --to-destination 192.168.0.10:943
-iptables -A FORWARD -p tcp -d 192.168.0.10 --dport 943 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+iptables -t nat -A PREROUTING -i enp0s9 -p tcp -d 192.168.33.253 --dport 943 -j DNAT --to-destination 192.168.0.10:943
+iptables -A FORWARD -i enp0s9 -p tcp -d 192.168.0.10 --dport 943 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 
 # ------------- FILTRADO ------------- 
-# Permitir reenvio solicitudes ICMP N1-S1
-iptables -A FORWARD -p icmp -s 192.168.1.130 -d 192.168.0.2 -j ACCEPT
+# --- INTRANET ---
+# Reenviar tramas de la intranet sobre D1 y los puertos de los servicios que hospeda
+iptables -A FORWARD -p tcp -s 192.168.1.0/25 -d 192.168.1.131 -m multiport --dports 25,80,443,21,20,110 -j ACCEPT
+iptables -A FORWARD -p tcp -s 192.168.1.0/25 -d 192.168.1.131 -m multiport --dports 143,465,587,993,995,3128,4599 -j ACCEPT
+iptables -A FORWARD -p tcp -s 192.168.1.0/25 -d 192.168.1.131 -m multiport --dports 4560,4561,4562,4563,4564,8080 -j ACCEPT
 
-# Permitir solicitudes DNS de los servidores al servidor DNS de Google
-iptables -A FORWARD -s 192.168.0.0/24 -d 8.8.8.8 -p udp --dport 53 -j ACCEPT
-iptables -A FORWARD -s 192.168.0.0/24 -d 8.8.8.8 -p tcp --dport 53 -j ACCEPT
+# Permitir tráfico de salida HTTP por parte de los hosts de la intranet y del proxy web
+iptables -A FORWARD -p tcp -s 192.168.1.0/25 --dport 80 -j ACCEPT
+iptables -A FORWARD -p tcp -s 192.168.1.0/25 --dport 443 -j ACCEPT
 
-# Permitir solicitudes DNS de la Intranet al servidor DNS de Google
-iptables -A FORWARD -s 192.168.1.0/24 -d 8.8.8.8 -p udp --dport 53 -j ACCEPT
-iptables -A FORWARD -s 192.168.1.0/24 -d 8.8.8.8 -p tcp --dport 53 -j ACCEPT
+iptables -A FORWARD -p tcp -s 192.168.1.131 --dport 80 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -p tcp -s 192.168.1.131 --dport 443 -m state --state NEW,ESTABLISHED -j ACCEPT
 
-# Permitir tráfico HTTP a S1
-iptables -A INPUT -d 192.168.0.2 -p tcp --dport 80 -j ACCEPT
-iptables -A INPUT -s 192.168.0.2 -p tcp --sport 80 -j ACCEPT
-iptables -A OUTPUT -d 192.168.0.2 -p tcp --dport 80 -j ACCEPT
-iptables -A OUTPUT -d 192.168.0.2 -p tcp --sport 80 -j ACCEPT
-iptables -A FORWARD -d 192.168.0.2 -p tcp --sport 80 -j ACCEPT
+# Permitir tráfico entrante DNS de la intranet
+iptables -A INPUT -p tcp -s 192.168.1.0/24 --dport 53 -j ACCEPT
+iptables -A INPUT -p udp -s 192.168.1.0/24 --dport 53 -j ACCEPT
+iptables -A OUTPUT -p tcp -d 192.168.1.0/24 --sport 53 -j ACCEPT
+iptables -A OUTPUT -p udp -d 192.168.1.0/24 --sport 53 -j ACCEPT
+
+# Trafico saliente 
+iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
+iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
 
 # Permitir trafico TCP sobre el puerto 3000 (ntpong) desde hosts de la Intranet
-iptables -A INPUT -s 192.168.0.0/24 -p tcp --dport 3000 -j ACCEPT
-iptables -A OUTPUT -s 192.168.0.0/24 -p tcp --sport 3000 -j ACCEPT
+iptables -A INPUT -s 192.168.1.0/25 -p tcp --dport 3000 -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -s 192.168.1.0/25 -p tcp --sport 3000 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# ---  DMZ  ---
+# Permitir tráfico HTTP a D2,D3 HTTP(s)
+iptables -A FORWARD -d 192.168.0.10 -p tcp --sport 80 -j ACCEPT
+iptables -A FORWARD -d 192.168.0.10 -p tcp --sport 443 -j ACCEPT
 
 # Reglas finales
 # Los routers no deben aparecer en los traceroute.
@@ -82,7 +95,13 @@ iptables -A FORWARD -s 192.168.0.0/24 -d 192.168.1.0/24 -j DROP
 # Bloquear tráfico Intranet-DMZ
 iptables -A FORWARD -s 192.168.1.0/24 -d 192.168.0.0/24 -j DROP
 
+# Bloquear tráfico Intranet hosts-Intranet servers
+iptables -A FORWARD -s 192.168.1.0/25 -d 192.168.128.0/25 -j DROP
+
+# Bloquear tráfico Intranet servers-Intranet hosts
+iptables -A FORWARD -s 192.168.128.0/25 -d 192.168.1.0/25 -j DROP
+
 # Bloquear tráfico DMZ saliente
-iptables -A OUTPUT -s 192.168.1.0/24 -j DROP
+iptables -A OUTPUT -s 192.168.0.0/24 -j DROP
 
 resolvectl dns enp0s9 8.8.8.8
