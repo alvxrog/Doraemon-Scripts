@@ -29,6 +29,10 @@ systemctl start dhcpd.service
 iptables -F
 iptables -t nat -F
 
+# Denegar todo el tráfico que venga de la enp0s9 (exterior) hacia dentro
+iptables -A FORWARD -i enp0s9 -d 192.168.0.0/24 -j DROP
+iptables -A FORWARD -i enp0s9 -d 192.168.1.0/24 -j DROP
+
 # --------- SNAT Y PORT FOWARDING --------- 
 # SNAT para las subredes de host y DMZ
 iptables -t nat -A POSTROUTING -s 192.168.0.0/24 -o enp0s9 -j SNAT --to 192.168.33.253
@@ -66,13 +70,13 @@ iptables -A FORWARD -p tcp -s 192.168.1.0/25 --dport 443 -j ACCEPT
 iptables -A FORWARD -p tcp -s 192.168.1.131 --dport 80 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 iptables -A FORWARD -p tcp -s 192.168.1.131 --dport 443 -m state --state NEW,ESTABLISHED -j ACCEPT
 
-# Permitir tráfico entrante DNS de la intranet
-iptables -A INPUT -p tcp -s 192.168.1.0/24 --dport 53 -j ACCEPT
-iptables -A INPUT -p udp -s 192.168.1.0/24 --dport 53 -j ACCEPT
-iptables -A OUTPUT -p tcp -d 192.168.1.0/24 --sport 53 -j ACCEPT
-iptables -A OUTPUT -p udp -d 192.168.1.0/24 --sport 53 -j ACCEPT
+# Permitir tráfico entrante DNS
+iptables -A INPUT -p tcp --dport 53 -j ACCEPT
+iptables -A INPUT -p udp --dport 53 -j ACCEPT
+iptables -A OUTPUT -p tcp --sport 53 -j ACCEPT
+iptables -A OUTPUT -p udp --sport 53 -j ACCEPT
 
-# Trafico saliente 
+# Trafico saliente para resoluciones DNS recursivas 
 iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
 iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
 
@@ -84,6 +88,7 @@ iptables -A OUTPUT -s 192.168.1.0/25 -p tcp --sport 3000 -m state --state ESTABL
 # Permitir tráfico HTTP a D2,D3 HTTP(s)
 iptables -A FORWARD -d 192.168.0.10 -p tcp --sport 80 -j ACCEPT
 iptables -A FORWARD -d 192.168.0.10 -p tcp --sport 443 -j ACCEPT
+iptables -A FORWARD -d 192.168.0.10 -p tcp --sport 943 -j ACCEPT
 
 # Reglas finales
 # Los routers no deben aparecer en los traceroute.
