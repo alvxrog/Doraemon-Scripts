@@ -58,6 +58,17 @@ iptables -A FORWARD -i enp0s9 -p tcp -d 192.168.0.10 --dport 943 -m state --stat
 
 # ------------- FILTRADO ------------- 
 # --- INTRANET ---
+# Peticiones para A1
+iptables -A FORWARD -p tcp -d 192.168.1.132 --dport 9392 -j ACCEPT 
+
+# Denegar todo el tráfico del exterior (enp0s9) hacia dentro sobre puertos no permitidos (22, 3000, )
+iptables -A INPUT -i enp0s9 -p tcp --dport 22 -j DROP
+iptables -A INPUT -i enp0s9 -p tcp --dport 22 -j DROP
+iptables -A INPUT -i enp0s9 -p tcp --dport 3000 -j DROP
+iptables -A FORWARD -i enp0s9 -p tcp --dport 3000 -j DROP
+iptables -A FORWARD -i enp0s9 -p tcp --dport 9090 -j DROP
+iptables -A FORWARD -i enp0s9 -p tcp --dport 9090 -j DROP
+
 # Reenviar tramas de la intranet sobre D1 y los puertos de los servicios que hospeda
 iptables -A FORWARD -p tcp -s 192.168.1.0/25 -d 192.168.1.131 -m multiport --dports 25,80,443,21,20,110 -j ACCEPT
 iptables -A FORWARD -p tcp -s 192.168.1.0/25 -d 192.168.1.131 -m multiport --dports 143,465,587,993,995,3128,4599 -j ACCEPT
@@ -76,9 +87,11 @@ iptables -A INPUT -p udp --dport 53 -j ACCEPT
 iptables -A OUTPUT -p tcp --sport 53 -j ACCEPT
 iptables -A OUTPUT -p udp --sport 53 -j ACCEPT
 
-# Trafico saliente para resoluciones DNS recursivas 
+# Permitir tráfico saliente DNS
 iptables -A OUTPUT -p tcp --dport 53 -j ACCEPT
 iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+iptables -A INPUT -p tcp --sport 53 -j ACCEPT
+iptables -A INPUT -p udp --sport 53 -j ACCEPT
 
 # Permitir trafico TCP sobre el puerto 3000 (ntpong) desde hosts de la Intranet
 iptables -A INPUT -s 192.168.1.0/25 -p tcp --dport 3000 -m state --state NEW,ESTABLISHED -j ACCEPT
@@ -89,6 +102,10 @@ iptables -A OUTPUT -s 192.168.1.0/25 -p tcp --sport 3000 -m state --state ESTABL
 iptables -A FORWARD -d 192.168.0.10 -p tcp --sport 80 -j ACCEPT
 iptables -A FORWARD -d 192.168.0.10 -p tcp --sport 443 -j ACCEPT
 iptables -A FORWARD -d 192.168.0.10 -p tcp --sport 943 -j ACCEPT
+
+# Permitir tráfico HTTP a K1 solo de la intranet
+iptables -A FORWARD -d 192.168.0.5 -s 192.168.1.0/25 -p tcp --dport 80 -j ACCEPT
+iptables -A FORWARD -s 192.168.0.5 -d 192.168.1.0/25 -p tcp --sport 80 -j ACCEPT
 
 # Reglas finales
 # Los routers no deben aparecer en los traceroute.

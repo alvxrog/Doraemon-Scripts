@@ -1,0 +1,22 @@
+$TTL 86400
+@   IN SOA agm-dorayaki.net admin.agm-dorayaki.net. (
+    2024120901  ; Serial
+    3600        ; Refresh
+    1800        ; Retry
+    1209600     ; Expire
+    86400       ; Minimum TTL
+)
+
+    IN NS ns1.agm-dorayaki.net
+
+ns1 IN A 192.168.33.253
+www IN A 192.168.0.10
+vpn IN A 192.168.0.10
+agm-dorayaki.net.   IN MX 10 mail.agm-dorayaki.net
+smtp IN A 192.168.1.131
+pop IN A 192.168.1.131
+mail IN A 192.168.1.131
+proxy IN A 192.168.1.131
+ftp IN A 192.168.1.131
+openvas IN A 192.168.1.132
+nagios IN A 192.168.1.131
